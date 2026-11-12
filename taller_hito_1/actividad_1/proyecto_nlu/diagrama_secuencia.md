@@ -66,4 +66,4 @@ Sobre el ejemplo, el análisis contextual deja esta lectura: intención de consu
 
 ## Qué deja fuera a propósito
 
-El diagrama fija el recorrido de una solicitud ya recibida. No modela persistencia, autenticación ni el detalle interno del siguiente proceso de negocio: ese proceso solo acusa recibo. Esas piezas se agregan cuando el backend las necesite, sin cambiar el orden de los agentes ni las tres salidas.
+El diagrama fija el recorrido de una solicitud ya recibida. No modela persistencia, autenticación ni el alojamiento del modelo: la API solo registra el estado y el siguiente proceso solo acusa recibo. Esas piezas están en la [arquitectura AWS tentativa](arquitectura_aws.md), sin cambiar el orden de los agentes ni las tres salidas.
