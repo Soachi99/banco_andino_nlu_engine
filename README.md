@@ -2,6 +2,8 @@
 
 Taller de la asignatura **IA en Negocios Digitales**.
 
+El canal se puede ver en [https://soachi99.github.io/banco_andino_nlu_engine/](https://soachi99.github.io/banco_andino_nlu_engine/). Se actualiza con cada cambio del front en `master`.
+
 El orden del taller es este: primero el ejercicio de la aplicación de transporte (Uber), para practicar los diagramas con GenAI. Después va lo que corresponde al proyecto que hay que construir como MVP, el identificador de solicitudes de Banco Andino.
 
 **La especificación técnica del motor NLU está en** [`taller_hito_1/especificacion_requerimientos_motor_nlu.docx`](taller_hito_1/especificacion_requerimientos_motor_nlu.docx) **y** [`taller_hito_1/especificacion_requerimientos_motor_nlu.pdf`](taller_hito_1/especificacion_requerimientos_motor_nlu.pdf).
