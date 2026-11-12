@@ -1,0 +1,155 @@
+' Identificación de solicitudes en lenguaje natural — Banco Andino
+' Capas previstas: React (interfaz) y Node (API + agentes).
+' La interpretación y la extracción corren en paralelo sobre el mensaje crudo.
+' El análisis contextual las reconcilia. El validador decide el destino.
+'
+' Contratos que el diagrama fija para la implementación:
+'   Intencion          { tipo, confianza }
+'   DatosRelevantes    { entidades, identificadores, atributosAusentes }
+'   AnalisisContextual { resumen, ambiguedades, datosFaltantes, suficiente }
+'   SalidaIntegrada    { intencion, datos, analisis }
+'   Veredicto          { cumpleRequisitos, accion, motivo }
+'     accion: REMITIR_PROCESO | SOLICITAR_INFORMACION | DERIVAR_OPERADOR
+
+@startuml secuencia_identificacion_solicitudes
+title Identificación de solicitudes en lenguaje natural\n<size:13>Del mensaje del cliente a la decisión de negocio</size>
+
+skinparam shadowing false
+skinparam roundcorner 6
+skinparam maxMessageSize 220
+skinparam sequenceMessageAlign center
+hide footbox
+
+skinparam sequence {
+  ArrowThickness 1
+  ParticipantBorderThickness 1
+  LifeLineBorderColor #94A3B8
+  LifeLineBackgroundColor #FFFFFF
+  GroupBorderColor #64748B
+  GroupBackgroundColor #F8FAFC
+  DividerBorderColor #334155
+  DividerBackgroundColor #E2E8F0
+}
+
+actor "Cliente" as Cliente #DBEAFE
+participant "Interfaz web\n(React)" as Web #BFDBFE
+participant "API de solicitudes\n(Node)" as API #E7E5E4
+participant "Agente\ncoordinador" as Coord #FDE68A
+participant "Agente\nintérprete" as Interp #BBF7D0
+participant "Agente\nextractor" as Ext #BBF7D0
+participant "Agente de\nanálisis contextual" as Ctx #86EFAC
+participant "Agente\nvalidador" as Val #FCD34D
+participant "Siguiente proceso\nde negocio" as Biz #FED7AA
+actor "Operador\nhumano" as Op #FBCFE8
+
+autonumber
+
+== Recepción del mensaje ==
+
+Cliente -> Web: Redacta la solicitud\n«Llevo varios días esperando\nla devolución de mi dinero»
+activate Web
+
+Web -> API: POST /api/solicitudes\n{ mensaje }
+activate API
+
+API -> API: Registrar correlación\ny estado RECIBIDA
+API -> Coord: analizar(mensaje)
+activate Coord
+
+== Intención y datos, en paralelo ==
+
+par Identificar la intención principal
+  Coord -> Interp: identificarIntencion(mensaje)
+  activate Interp
+  Interp -> Interp: Clasificar intención\ny estimar confianza
+  Interp --> Coord: Intencion\n{ tipo, confianza }
+  deactivate Interp
+else Extraer la información relevante
+  Coord -> Ext: extraerDatos(mensaje)
+  activate Ext
+  Ext -> Ext: Detectar entidades,\nidentificadores y ausencias
+  Ext --> Coord: DatosRelevantes\n{ entidades, identificadores,\natributosAusentes }
+  deactivate Ext
+end
+
+== Suficiencia y ambigüedad ==
+
+Coord -> Ctx: analizarContexto(\nmensaje, intencion, datos)
+activate Ctx
+Ctx -> Ctx: Redactar el resumen,\ndetectar ambigüedades\ny juzgar si los datos alcanzan
+Ctx --> Coord: AnalisisContextual\n{ resumen, ambiguedades,\ndatosFaltantes, suficiente }
+deactivate Ctx
+
+note right of Ctx
+  Sobre el ejemplo:
+  intención = consulta por
+  devolución pendiente
+  resumen = dinero no devuelto
+  tras varios días
+  suficiente = falso
+  faltan caso, monto y fecha
+end note
+
+== Integración ==
+
+Coord -> Coord: integrar(\nintencion, datos, analisis)\n→ SalidaIntegrada
+
+== Validación y destino ==
+
+Coord -> Val: validar(salidaIntegrada)
+activate Val
+Val -> Val: Contrastar la salida\ncon las reglas del caso
+Val --> Coord: Veredicto\n{ cumpleRequisitos, accion, motivo }
+deactivate Val
+
+alt REMITIR_PROCESO
+  note right of Val: La salida cumple los requisitos del caso
+  Coord -> Biz: remitir(salidaIntegrada)
+  activate Biz
+  Biz --> Coord: Acuse de recepción
+  deactivate Biz
+  Coord --> API: Resultado\n{ estado: REMITIDA, resumen, intencion }
+  API --> Web: 200 OK\nCaso listo para el proceso
+  Web --> Cliente: Muestra el resumen\ny el siguiente paso
+
+else SOLICITAR_INFORMACION
+  note right of Val: Faltan datos o la ambigüedad se puede resolver con el cliente
+  Coord --> API: Resultado\n{ estado: INCOMPLETA,\nresumen, preguntas }
+  API --> Web: 200 OK\nSolicitud de aclaración
+  Web --> Cliente: Pide los datos faltantes\n(caso, monto, fecha, producto)
+
+  note over Cliente, Web
+    La respuesta del cliente
+    vuelve a entrar por
+    POST /api/solicitudes
+    con el mensaje enriquecido.
+  end note
+
+else DERIVAR_OPERADOR
+  note right of Val: Ambigüedad no resoluble o confianza insuficiente
+  Coord -> Op: derivar(salidaIntegrada, motivo)
+  activate Op
+  Op --> Coord: Acuse de toma del caso
+  deactivate Op
+  Coord --> API: Resultado\n{ estado: DERIVADA, resumen, motivo }
+  API --> Web: 200 OK\nCaso en manos de un asesor
+  Web --> Cliente: Informa que un operador\ncontinuará la atención
+end
+
+deactivate Coord
+deactivate API
+deactivate Web
+
+legend right
+  |= Capa |= Participante |= Responsabilidad |
+  | Canal | Cliente, React | Redactar el mensaje y ver el resultado |
+  | Borde | API Node | Recibir HTTP, correlacionar y responder |
+  | Orquestación | Coordinador | Disparar agentes, integrar y enrutar |
+  | Comprensión | Intérprete, extractor, análisis | Intención, datos, resumen y huecos |
+  | Control | Validador | Aceptar, pedir datos o derivar |
+  | Destino | Proceso de negocio, operador | Continuar el caso fuera del NLU |
+endlegend
+
+footer Banco Andino · Motor NLU · Identificación de solicitudes
+
+@enduml
