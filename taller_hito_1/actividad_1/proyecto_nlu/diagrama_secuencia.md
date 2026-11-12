@@ -9,6 +9,8 @@ También es el diagrama de secuencia elaborado para la **Actividad 1 — Constru
 | [`secuencia_identificacion_solicitudes.puml`](secuencia_identificacion_solicitudes.puml) | Fuente PlantUML |
 | [`secuencia_identificacion_solicitudes.png`](secuencia_identificacion_solicitudes.png) | Gráfica generada a partir de esa fuente |
 
+Las mismas identidades, con los vínculos permitidos y sin el orden temporal, están en [`diagrama_interaccion_identidades.md`](diagrama_interaccion_identidades.md).
+
 ![Diagrama de secuencia de la identificación de solicitudes](secuencia_identificacion_solicitudes.png)
 
 ## Qué representa

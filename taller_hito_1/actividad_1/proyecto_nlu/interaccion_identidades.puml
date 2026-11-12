@@ -1,0 +1,102 @@
+' Interacción de identidades — Banco Andino
+' Cada caja es una identidad (instancia : tipo).
+' Cada flecha es un vínculo permitido. Si dos identidades no están unidas, no se hablan.
+' La numeración coincide con el diagrama de secuencia.
+' El detalle de cada mensaje está en diagrama_interaccion_identidades.md.
+
+@startuml interaccion_identidades
+title Interacción de identidades\n<size:13>Identificación de solicitudes en lenguaje natural</size>
+
+skinparam shadowing false
+skinparam roundcorner 8
+skinparam linetype polyline
+skinparam nodesep 18
+skinparam ranksep 28
+skinparam dpi 140
+
+skinparam object {
+  BorderColor #334155
+  FontColor #0F172A
+  FontSize 13
+  AttributeFontSize 11
+  AttributeFontColor #334155
+}
+skinparam package {
+  BorderColor #64748B
+  FontColor #0F172A
+  FontStyle bold
+}
+skinparam arrow {
+  Color #334155
+  FontColor #1E293B
+  FontSize 12
+  MessageAlignment left
+}
+skinparam note {
+  BackgroundColor #FEF9C3
+  BorderColor #CA8A04
+}
+
+together {
+  object "«humano»\n: Cliente" as cliente #DBEAFE {
+    Redacta y lee la respuesta
+  }
+  object "«canal»\nweb : InterfazWeb" as web #BFDBFE {
+    React · solo habla con la API
+  }
+  object "«borde»\napi : ApiSolicitudes" as api #E7E5E4 {
+    Node · POST /api/solicitudes
+  }
+  object "«orquestación»\ncoordinador : AgenteCoordinador" as coord #FDE68A {
+    Única puerta hacia los agentes
+    integrar() → SalidaIntegrada
+  }
+}
+
+together {
+  object "«comprensión»\ninterprete : AgenteInterprete" as interprete #BBF7D0 {
+    Clasifica la intención
+  }
+  object "«comprensión»\nextractor : AgenteExtractor" as extractor #BBF7D0 {
+    Detecta entidades y ausencias
+  }
+  object "«comprensión»\nanalisis : AgenteAnalisisContextual" as analisis #86EFAC {
+    Resume y juzga suficiencia
+  }
+  object "«control»\nvalidador : AgenteValidador" as validador #FCD34D {
+    Elige la acción
+  }
+}
+
+together {
+  object "«destino»\nproceso : ProcesoNegocio" as proceso #FED7AA {
+    Sigue solo si el caso cumple
+  }
+  object "«humano»\noperador : OperadorHumano" as operador #FBCFE8 {
+    Atiende lo que el NLU no cierra
+  }
+}
+
+cliente --> web : **1.** solicitud\n← resultado
+web --> api : **2.** POST /api/solicitudes\n← 200
+api --> coord : **4.** analizar(mensaje)\n← Resultado
+
+coord --> interprete : **5.** identificarIntencion\n← Intencion
+coord --> extractor : **8.** extraerDatos\n← DatosRelevantes
+coord --> analisis : **11.** analizarContexto\n← AnalisisContextual
+coord --> validador : **15.** validar\n← Veredicto
+
+coord -[#C2410C]-> proceso : **18.** remitir\n← acuse\n[REMITIR_PROCESO]
+coord -[#9D174D]-> operador : **26.** derivar\n← acuse\n[DERIVAR_OPERADOR]
+
+note bottom of extractor
+  Intérprete y extractor no tienen flecha entre sí:
+  el coordinador los dispara en paralelo.
+  El validador no se une a proceso ni a operador.
+  Si la acción es SOLICITAR_INFORMACION,
+  la vuelta al cliente usa las flechas 4, 2 y 1.
+end note
+
+footer Banco Andino · Motor NLU · Interacción de identidades
+
+@enduml
