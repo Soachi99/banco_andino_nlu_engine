@@ -4,6 +4,8 @@ Taller de la asignatura **IA en Negocios Digitales**.
 
 El orden del taller es este: primero el ejercicio de la aplicación de transporte (Uber), para practicar los diagramas con GenAI. Después va lo que corresponde al proyecto que hay que construir como MVP, el identificador de solicitudes de Banco Andino.
 
+**La especificación técnica del motor NLU está en** [`taller_hito_1/especificacion_requerimientos_motor_nlu.docx`](taller_hito_1/especificacion_requerimientos_motor_nlu.docx) **y** [`taller_hito_1/especificacion_requerimientos_motor_nlu.pdf`](taller_hito_1/especificacion_requerimientos_motor_nlu.pdf).
+
 ## Actividad 1 — Construyendo diagramas con GenAI
 
 Dentro de esta actividad se hizo primero Uber y, a continuación, los diagramas del motor.
@@ -71,7 +73,7 @@ El diagrama de casos de uso distingue al visitante del cliente logueado, y deja 
 
 ## Actividad 3 — Trabajando como Tech Lead con GenAI
 
-En esta actividad el trabajo de las dos anteriores se consolida en una especificación de requerimientos del software (ERS), versión 1.0, del 12 de noviembre de 2026. El documento fija qué debe hacer el motor, qué recibe el cliente, cómo se recorre un caso, qué decisión sale de cada mensaje y con qué modelo, contratos y arquitectura se sostiene esa decisión. El ejercicio de Uber queda fuera de este sistema.
+En esta actividad el trabajo de las dos anteriores se consolida en una especificación de requerimientos del software (ERS), versión 1.1, del 12 de noviembre de 2026. El documento fija qué debe hacer el motor, qué recibe el cliente, cómo se recorre un caso, qué decisión sale de cada mensaje y con qué modelo, contratos y arquitectura se sostiene esa decisión. La versión 1.1 añade las historias del MVP, la descripción de US-01 y sus tickets de trabajo. El ejercicio de Uber queda fuera de este sistema.
 
 El mismo texto está en Word y en PDF:
 

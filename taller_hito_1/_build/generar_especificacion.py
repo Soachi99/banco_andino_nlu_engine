@@ -369,16 +369,62 @@ def figure(doc, path, caption, max_w=Cm(17.4), max_h=Cm(22.2)):
 
 
 def code_block(doc, text, label):
-    para(doc, label, size=10, bold=True, color=TEAL, after=2, before=2)
+    """Encierra la fuente en una ficha: barra de título y cuerpo monoespaciado."""
+    table = doc.add_table(rows=2, cols=1)
+    table.alignment = WD_TABLE_ALIGNMENT.CENTER
+    table.autofit = False
+    table.allow_autofit = False
+    tbl = table._tbl
+    tbl_pr = tbl.tblPr
+    tbl_w = OxmlElement("w:tblW")
+    tbl_w.set(qn("w:w"), "9864")
+    tbl_w.set(qn("w:type"), "dxa")
+    tbl_pr.append(tbl_w)
+    borders = OxmlElement("w:tblBorders")
+    for edge, color, sz in (
+        ("top", "1B3A4B", "8"),
+        ("left", "0F766E", "16"),
+        ("bottom", "CBD5E1", "8"),
+        ("right", "CBD5E1", "8"),
+        ("insideH", "1B3A4B", "4"),
+        ("insideV", "CBD5E1", "4"),
+    ):
+        el = OxmlElement(f"w:{edge}")
+        el.set(qn("w:val"), "single")
+        el.set(qn("w:sz"), sz)
+        el.set(qn("w:space"), "0")
+        el.set(qn("w:color"), color)
+        borders.append(el)
+    tbl_pr.append(borders)
+
+    header = table.cell(0, 0)
+    header.width = Cm(17.4)
+    shade_cell(header, "1B3A4B")
+    set_cell_margins(header, top=60, bottom=60, left=120, right=120)
+    header.text = ""
+    hp = header.paragraphs[0]
+    hp.paragraph_format.space_before = Pt(0)
+    hp.paragraph_format.space_after = Pt(0)
+    run = hp.add_run(label.upper())
+    set_run_font(run, size=9, bold=True, color=RGBColor(255, 255, 255))
+
+    body = table.cell(1, 0)
+    body.width = Cm(17.4)
+    shade_cell(body, "F8FAFC")
+    set_cell_margins(body, top=80, bottom=80, left=140, right=120)
+    body.text = ""
     lines = text.replace("\r\n", "\n").strip("\n").split("\n")
-    for line in lines:
-        p = doc.add_paragraph()
+    for index, line in enumerate(lines):
+        p = body.paragraphs[0] if index == 0 else body.add_paragraph()
         p.paragraph_format.space_before = Pt(0)
         p.paragraph_format.space_after = Pt(0)
         p.paragraph_format.line_spacing = 1.0
         run = p.add_run(line if line else " ")
-        set_run_font(run, name="Consolas", size=8, color=INK)
-    para(doc, "", after=6)
+        set_run_font(run, name="Consolas", size=8, color=RGBColor(0x0F, 0x17, 0x2A))
+    prevent_row_split(table.rows[0])
+    spacer = doc.add_paragraph()
+    spacer.paragraph_format.space_before = Pt(2)
+    spacer.paragraph_format.space_after = Pt(8)
 
 
 def cover(doc):
@@ -410,10 +456,10 @@ def cover(doc):
             ["Documento", "Especificación de requerimientos del software (ERS)"],
             ["Sistema", "Motor NLU — identificador de solicitudes"],
             ["Asignatura", "IA en Negocios Digitales"],
-            ["Entrega", "Hito 1 — taller, actividades 1 y 2"],
-            ["Versión", "1.0"],
+            ["Entrega", "Hito 1 — taller, actividades 1, 2 y 3"],
+            ["Versión", "1.1"],
             ["Fecha", "12 de noviembre de 2026"],
-            ["Estado", "Consolidación del trabajo realizado hasta esta fecha"],
+            ["Estado", "Requerimiento, backlog del MVP y tickets de US-01"],
         ],
         [Cm(4.2), Cm(13.2)],
     )
@@ -421,7 +467,9 @@ def cover(doc):
         doc,
         "Este documento reúne el requerimiento del identificador de solicitudes de Banco Andino: "
         "qué debe hacer el motor, qué recibe el cliente, cómo se recorre un caso, qué decisión "
-        "sale de cada mensaje y con qué modelo, contratos y arquitectura se sostiene esa decisión.",
+        "sale de cada mensaje y con qué modelo, contratos y arquitectura se sostiene esa decisión. "
+        "El cierre baja ese requerimiento a historias de usuario y a los tickets de la primera "
+        "historia, que es la pantalla donde el cliente escribe y ve la decisión.",
         align="justify",
     )
     callout(
@@ -445,6 +493,9 @@ def cover(doc):
         "9. Secuencia de la identificación",
         "10. Arquitectura de despliegue",
         "11. Correspondencia con los artefactos del taller",
+        "12. Historias de usuario del MVP",
+        "13. US-01. Descripción de la historia",
+        "14. US-01. Tickets de trabajo",
     ]:
         para(doc, item, size=11, after=1)
     doc.add_page_break()
@@ -1169,6 +1220,9 @@ def section_trazabilidad(doc):
             ["9. Secuencia", "diagrama_secuencia.md, secuencia_identificacion_solicitudes.puml y su PNG"],
             ["10.1 Despliegue tentativo", "arquitectura_aws.md, arquitectura_aws.py y arquitectura_nlu_aws.png"],
             ["10.2 Microservicios", "respuestas_actividad_2.md, prompt 7, diagrama Mermaid"],
+            ["12. Historias de usuario del MVP", "actividad_3/UserHistories.md"],
+            ["13. Descripción de US-01", "actividad_3/US-01_Description.md"],
+            ["14. Tickets de US-01", "actividad_3/US-01_Work_items.md"],
         ],
         [Cm(5.6), Cm(11.8)],
     )
@@ -1180,12 +1234,498 @@ def section_trazabilidad(doc):
         "tentativa queda como la gráfica generada por Diagrams.",
         align="justify",
     )
+
+
+def story(doc, title, statement, criteria):
+    h(doc, title, 2)
+    callout(doc, statement)
+    bullets(doc, criteria)
+
+
+def ticket(doc, ticket_id, title, description, criteria, priority, hours, tasks, notes, workshop=False):
+    h(doc, f"{ticket_id}. {title}", 2)
+    if workshop:
+        callout(
+            doc,
+            "Ticket de este taller. Define el modelo de presentación que el resto de US-01 "
+            "consume. La pantalla no interpreta los códigos del motor por su cuenta.",
+        )
+    add_table(
+        doc,
+        ["ID", "Prioridad", "Esfuerzo"],
+        [[ticket_id, priority, f"{hours} horas"]],
+        [Cm(4.2), Cm(6.6), Cm(6.6)],
+    )
+    labeled(doc, "Descripción. ", description)
+    para(doc, "Criterios de aceptación", size=11, bold=True, color=TEAL, after=2, before=2)
+    bullets(doc, criteria)
+    para(doc, "Tareas técnicas", size=11, bold=True, color=TEAL, after=2, before=4)
+    bullets(doc, tasks)
+    labeled(doc, "Notas. ", notes)
+
+
+def section_historias(doc):
+    doc.add_page_break()
+    h(doc, "12. Historias de usuario del MVP")
     para(
         doc,
-        "Versión 1.0. Consolida el trabajo del motor NLU hasta el 12 de noviembre de 2026.",
+        "El MVP del identificador de solicitudes de Banco Andino habilita al cliente para "
+        "describir su caso en texto libre y obtener, en la misma interacción, una decisión de "
+        "negocio lista para operar. El canal entrega el mensaje en un único POST /api/solicitudes. "
+        "Esa llamada persiste la solicitud, la interpretación y la decisión, y devuelve al cliente "
+        "la intención principal, la confianza, los datos encontrados, los datos faltantes, un "
+        "resumen breve, la acción elegida y el motivo.",
+        align="justify",
+    )
+    para(
+        doc,
+        "La decisión cierra el caso en una de tres acciones comerciales: REMITIR_PROCESO, cuando "
+        "la intención es única, la confianza es suficiente y constan número de caso, monto y fecha; "
+        "SOLICITAR_INFORMACION, cuando la intención se sostiene y falta alguno de esos datos, con "
+        "las preguntas concretas; o DERIVAR_OPERADOR, cuando el mensaje admite más de una lectura "
+        "o la confianza es baja. El caso de referencia es «Llevo varios días esperando la devolución "
+        "de mi dinero»: sin caso, monto ni fecha solicita esos tres datos; con el caso 45821, "
+        "$120.000 y la compra del 3 de noviembre remite la devolución pendiente; si además admite "
+        "un cobro de tarjeta no reconocido, deriva el caso.",
+        align="justify",
+    )
+    para(
+        doc,
+        "Este MVP solo cubre la identificación y el enrutamiento de la solicitud. La autenticación "
+        "de la sesión, la ejecución del trámite una vez remitido y la gestión del operador después "
+        "de recibir el caso pertenecen a los procesos posteriores del banco.",
+        align="justify",
+    )
+    story(
+        doc,
+        "US-01. Enviar el mensaje y ver la decisión",
+        "Como cliente, quiero escribir mi caso en texto libre y enviarlo desde una pantalla con "
+        "un campo y un botón, para recibir en la misma interacción qué entendió el banco y qué "
+        "va a pasar.",
+        [
+            "La pantalla no pide tipo de trámite ni formulario previo.",
+            "Tras el envío, muestra el resumen, la intención, la confianza, los datos encontrados, los datos que faltan, la acción y el motivo.",
+            "El estado visible es uno: remitida, incompleta o derivada.",
+        ],
+    )
+    story(
+        doc,
+        "US-02. Recibir una sola decisión por mensaje",
+        "Como cliente, quiero que cada envío responda una sola vez con una decisión completa, "
+        "para saber si el trámite sigue, si debo aclarar algo o si lo toma una persona.",
+        [
+            "POST /api/solicitudes responde HTTP 200 en las tres salidas. El destino se distingue en el cuerpo, no en el código de estado.",
+            "El cuerpo trae estado, intencion.tipo, confianza, datos encontrados, datos faltantes, resumen, accion y motivo.",
+            "accion admite solo REMITIR_PROCESO, SOLICITAR_INFORMACION o DERIVAR_OPERADOR.",
+            "preguntas aparece solo cuando la acción es SOLICITAR_INFORMACION.",
+        ],
+    )
+    story(
+        doc,
+        "US-03. Reconocer la intención principal",
+        "Como motor, quiero clasificar la intención principal del texto y conservar la duda si "
+        "otra lectura es igual de plausible, para que el caso tenga un destino.",
+        [
+            "«Llevo varios días esperando la devolución de mi dinero» se clasifica como devolución pendiente.",
+            "Si el texto también admite un cobro de tarjeta no reconocido, se conservan las dos lecturas.",
+            "La intención va acompañada de una confianza: alta con una sola lectura clara; baja si el texto es vago o hay lecturas en competencia.",
+        ],
+    )
+    story(
+        doc,
+        "US-04. Extraer lo que está y marcar lo que falta",
+        "Como motor, quiero obtener del texto las entidades y los identificadores, y marcar los "
+        "atributos que el caso exige y no aparecen, para no pedir de nuevo lo que el cliente ya dijo.",
+        [
+            "En una devolución pendiente, los datos mínimos son número de caso, monto y fecha. El producto se extrae solo si viene en el texto.",
+            "Con el caso 45821, $120.000 y la compra del 3 de noviembre, esos tres datos quedan como encontrados y no hay faltantes de remisión.",
+            "Con el relato sin esos datos, faltan caso, monto y fecha.",
+        ],
+    )
+    story(
+        doc,
+        "US-05. Resumir el problema y juzgar si alcanza",
+        "Como proceso de negocio y como operador, quiero un resumen de una o dos frases, las "
+        "ambigüedades y un juicio de suficiencia, para trabajar sobre la lectura y no sobre el "
+        "mensaje crudo.",
+        [
+            "El resumen del ejemplo sin datos dice que el dinero no ha vuelto tras varios días.",
+            "suficiente es falso si faltan caso, monto o fecha, o si hay más de una lectura.",
+            "suficiente es verdadero solo con intención única, confianza suficiente y los tres datos mínimos.",
+        ],
+    )
+    story(
+        doc,
+        "US-06. Elegir una sola acción y dejar el motivo",
+        "Como validador, quiero contrastar la lectura con las reglas del caso y elegir exactamente "
+        "una acción con su motivo, para que clasificar, extraer o resumir no autoricen por sí solos "
+        "el paso al siguiente proceso.",
+        [
+            "Intención única, confianza suficiente y datos mínimos, con cliente logueado: REMITIR_PROCESO.",
+            "Intención que se sostiene y falta un dato que el cliente puede aportar: SOLICITAR_INFORMACION, con las preguntas concretas.",
+            "Más de una lectura o confianza baja: DERIVAR_OPERADOR, para visitante y logueado.",
+            "El visitante no remite. La falta de identidad cuenta como dato faltante y la salida es pedir aclaración, salvo que el mensaje deba derivarse. El inicio de sesión queda fuera del identificador.",
+        ],
+    )
+    story(
+        doc,
+        "US-07. Pedir solo lo que falta",
+        "Como cliente, quiero que, si mi intención es clara y faltan datos, me pregunten exactamente "
+        "esos datos, para completar el caso sin repetir el relato.",
+        [
+            "«Llevo varios días esperando la devolución de mi dinero» devuelve estado INCOMPLETA, acción SOLICITAR_INFORMACION y las preguntas de número de caso, monto y fecha.",
+            "El motivo indica que la intención es clara y el cliente puede aportar esos tres datos.",
+        ],
+    )
+    story(
+        doc,
+        "US-08. Remitir la devolución cuando el caso está completo",
+        "Como cliente logueado, quiero que mi devolución se remita al proceso de negocio cuando la "
+        "intención es única, la confianza alcanza y están el caso, el monto y la fecha, para no "
+        "repetir la historia en otro canal.",
+        [
+            "El relato con el caso 45821, $120.000 y la compra del 3 de noviembre devuelve estado REMITIDA y acción REMITIR_PROCESO.",
+            "La respuesta incluye el resumen y la intención de devolución pendiente.",
+            "El coordinador publica hacia el proceso de negocio y espera el acuse. La resolución del trámite queda fuera.",
+        ],
+    )
+    story(
+        doc,
+        "US-09. Derivar cuando hay más de una lectura",
+        "Como cliente, quiero que un operador reciba el caso ya resumido cuando el mensaje admite "
+        "más de una lectura o la confianza es baja, para no volver a contar lo sucedido.",
+        [
+            "El relato que además admite un cobro de tarjeta no reconocido devuelve estado DERIVADA y acción DERIVAR_OPERADOR.",
+            "Compiten devolución pendiente y transacción no reconocida.",
+            "La respuesta incluye el resumen y el motivo. El coordinador deja el caso para el operador y recibe el acuse. La atención posterior queda fuera.",
+        ],
+    )
+    story(
+        doc,
+        "US-10. Dejar constancia de la solicitud, la lectura y la decisión",
+        "Como banco, quiero persistir la solicitud, la interpretación de ese mensaje y la decisión, "
+        "para auditar la intención, los datos, el resumen, la confianza y el motivo.",
+        [
+            "Cada POST crea una Request (id, status, correlationId, createdAt), una Interpretation y una sola Decision.",
+            "Request.status proyecta la última decisión: RECEIVED al entrar, luego INCOMPLETE, FORWARDED o ESCALATED.",
+            "La interpretación guarda intentType, confidence, entities, identifiers, missingFields, summary, ambiguities y sufficient.",
+            "La decisión guarda action, meetsRequirements, reason y, solo si pide aclaración, questions.",
+        ],
+    )
+    story(
+        doc,
+        "US-11. Recorrer el mensaje en el orden del motor",
+        "Como sistema, quiero que un solo coordinador integre la lectura y enrute el veredicto, "
+        "para que cada mensaje termine en una de las tres salidas sin que los agentes se llamen "
+        "entre sí.",
+        [
+            "La interfaz solo habla con la API y la API solo llama a analizar(mensaje) en el coordinador.",
+            "Intérprete y extractor corren a la vez sobre el texto crudo. El análisis contextual corre después, con el mensaje, la intención y los datos.",
+            "El validador devuelve el veredicto. Solo el coordinador remite o deriva. Si la acción es pedir información, la respuesta vuelve por la misma llamada, sin otro servicio.",
+        ],
+    )
+
+
+def section_us01(doc):
+    doc.add_page_break()
+    h(doc, "13. US-01. Descripción de la historia")
+    h(doc, "13.1 Enunciado", 2)
+    callout(
+        doc,
+        "Como cliente de Banco Andino, quiero escribir mi caso en texto libre y enviarlo desde "
+        "una pantalla con un campo y un botón, para recibir en la misma interacción qué entendió "
+        "el banco y qué va a pasar con mi solicitud.",
+    )
+    h(doc, "13.2 Valor de negocio", 2)
+    para(
+        doc,
+        "El cliente llega al canal con un problema ya formulado en sus palabras. Esta historia le "
+        "evita elegir un tipo de trámite o completar un formulario previo. El banco gana una "
+        "primera atención consistente: la persona comprueba la lectura y ve, en la misma pantalla, "
+        "si el caso quedó remitido, si debe aclarar datos o si un operador continúa la atención.",
+        align="justify",
+    )
+    para(
+        doc,
+        "US-01 es la cara del MVP. Las historias siguientes producen la intención, los datos, el "
+        "resumen y la acción. Esta historia se da por cumplida cuando esa decisión se puede "
+        "escribir y leer en el canal.",
+        align="justify",
+    )
+    h(doc, "13.3 Actor y alcance", 2)
+    para(
+        doc,
+        "El actor es el cliente del banco, en la pantalla de solicitud. El inicio de sesión queda "
+        "fuera de esta historia. La pantalla asume que la persona ya está frente al campo de texto.",
+        align="justify",
+    )
+    para(doc, "Incluye", size=11, bold=True, color=TEAL, after=2)
+    bullets(
+        doc,
+        [
+            "Una pantalla con un campo de texto libre y un botón para enviar la solicitud.",
+            "El envío del texto escrito y la espera en la misma pantalla.",
+            "La presentación de la decisión: resumen, intención, confianza, datos encontrados, datos faltantes, acción y motivo.",
+            "Un estado visible, y solo uno: remitida, incompleta o derivada.",
+        ],
+    )
+    para(doc, "No incluye", size=11, bold=True, color=TEAL, after=2, before=6)
+    bullets(
+        doc,
+        [
+            "El contrato HTTP, la persistencia y el código de estado. Eso corresponde a US-02 y US-10.",
+            "La clasificación, la extracción, el resumen y la elección de la acción. Eso corresponde a US-03 a US-06.",
+            "La autenticación, la resolución del trámite y la conversación del operador con el cliente.",
+        ],
+    )
+    h(doc, "13.4 Recorrido en pantalla", 2)
+    numbered(
+        doc,
+        [
+            "El cliente abre la pantalla de solicitud. Ve el campo de texto libre y el botón de envío. No hay menú de trámites ni campos de caso, monto o fecha.",
+            "Redacta el caso con sus palabras y envía.",
+            "La pantalla permanece en el mismo lugar mientras espera la respuesta. El botón no admite un segundo envío hasta que llegue la decisión.",
+            "Al llegar la respuesta, la pantalla muestra la lectura del banco y el estado resultante.",
+            "El cliente comprueba el resumen y entiende el siguiente paso sin salir del canal.",
+        ],
+    )
+    h(doc, "13.5 Qué debe ver el cliente", 2)
+    para(
+        doc,
+        "La respuesta se presenta en lenguaje de negocio. Los códigos internos pueden acompañar "
+        "la decisión, pero el estado visible usa estas tres etiquetas. En los tres estados la "
+        "pantalla muestra, además, la confianza, los datos encontrados y los datos que faltan. "
+        "Si no falta ningún dato, esa sección se muestra vacía.",
+        align="justify",
+    )
+    add_table(
+        doc,
+        ["Estado visible", "Cuándo aparece", "Qué comunica la pantalla"],
+        [
+            ["Remitida", "La acción es remitir el caso", "El banco entendió una devolución pendiente y la solicitud pasó al proceso que la resuelve. Muestra resumen, intención y motivo."],
+            ["Incompleta", "La acción es pedir aclaración", "La intención se sostiene y faltan datos. Muestra el resumen y las preguntas concretas, sin pedir que repita el relato."],
+            ["Derivada", "La acción es derivar a un operador", "Hay más de una lectura o la confianza es baja. Muestra el resumen y el motivo, e informa que un operador continúa la atención."],
+        ],
+        [Cm(3.2), Cm(4.6), Cm(9.6)],
+    )
+    h(doc, "13.6 Caso de referencia en el canal", 2)
+    para(
+        doc,
+        "El relato base es «Llevo varios días esperando la devolución de mi dinero».",
+        align="justify",
+    )
+    add_table(
+        doc,
+        ["Mensaje que escribe el cliente", "Estado que ve"],
+        [
+            ["«Llevo varios días esperando la devolución de mi dinero.»", "Incompleta. La pantalla pide número de caso, monto y fecha."],
+            ["«…del caso 45821, por $120.000, de la compra del 3 de noviembre.»", "Remitida. La pantalla muestra el resumen actualizado y que la solicitud fue remitida."],
+            ["«…o quizá fue un cobro de la tarjeta que no reconozco.»", "Derivada. La pantalla avisa que un operador continúa la atención."],
+        ],
+        [Cm(10.2), Cm(7.2)],
+    )
+    h(doc, "13.7 Criterios de aceptación", 2)
+    numbered(
+        doc,
+        [
+            "Dado un cliente en la pantalla de solicitud, cuando observa el formulario, entonces ve un único campo de texto libre y un botón de envío, sin selector de trámite ni campos previos de caso, monto o fecha.",
+            "Dado un campo vacío, cuando intenta enviar, entonces la pantalla no dispara la solicitud y mantiene el campo listo para escribir.",
+            "Dado un texto escrito, cuando envía, entonces la interfaz manda ese texto y el cliente espera la respuesta en la misma pantalla.",
+            "Dado un envío en curso, cuando aún no llega la decisión, entonces no puede lanzar otro envío sobre la misma espera.",
+            "Dada la respuesta del motor, cuando la pantalla la presenta, entonces muestra resumen, intención, confianza, datos encontrados, datos faltantes, acción y motivo.",
+            "Dada una acción de remitir, cuando se muestra el resultado, entonces el estado visible es remitida y no aparecen preguntas de aclaración.",
+            "Dada una acción de pedir aclaración, cuando se muestra el resultado, entonces el estado visible es incompleta y se listan las preguntas concretas devueltas por el motor.",
+            "Dada una acción de derivar, cuando se muestra el resultado, entonces el estado visible es derivada, se informa que un operador continúa y no se pide al cliente que vuelva a contar el caso.",
+            "Dada cualquiera de las tres respuestas, cuando termina la interacción, entonces la pantalla muestra un solo estado.",
+        ],
+    )
+    h(doc, "13.8 Dependencias y definición de terminado", 2)
+    bullets(
+        doc,
+        [
+            "US-02 entrega el cuerpo de la decisión que esta pantalla proyecta.",
+            "US-07, US-08 y US-09 fijan el contenido de negocio de cada estado para el caso de referencia.",
+        ],
+    )
+    callout(
+        doc,
+        "La historia está terminada cuando un cliente puede escribir uno de los tres mensajes de "
+        "referencia, enviarlo una vez y leer en la misma pantalla el estado que le corresponde, "
+        "con el resumen y el resto de la decisión visibles.",
+    )
+
+
+def section_tickets(doc):
+    doc.add_page_break()
+    h(doc, "14. US-01. Tickets de trabajo")
+    para(
+        doc,
+        "El canal es una pantalla React. Habla solo con POST /api/solicitudes y proyecta la "
+        "decisión que devuelve US-02. Estos tickets no construyen el motor, la persistencia, la "
+        "autenticación ni la atención del operador. El esfuerzo total estimado es de 22 horas.",
+        align="justify",
+    )
+    callout(
+        doc,
+        "En este taller se trabaja US01-01, el primer ticket de la primera historia. Define cómo "
+        "la pantalla traduce la respuesta del motor al lenguaje del cliente: Remitida, Incompleta "
+        "o Derivada.",
+    )
+    add_table(
+        doc,
+        ["ID", "Título", "Prioridad", "Horas"],
+        [
+            ["US01-01", "Modelo de presentación de la decisión", "Alta", "3"],
+            ["US01-02", "Pantalla de captura en texto libre", "Alta", "4"],
+            ["US01-03", "Envío del mensaje y espera en la misma pantalla", "Alta", "5"],
+            ["US01-04", "Panel de la decisión y sus tres estados", "Alta", "6"],
+            ["US01-05", "Verificación del caso de referencia en el canal", "Media", "4"],
+        ],
+        [Cm(2.6), Cm(9.2), Cm(2.8), Cm(2.8)],
+    )
+    ticket(
+        doc,
+        "US01-01",
+        "Modelo de presentación de la decisión",
+        "La interfaz necesita un contrato de vista propio, separado del cuerpo HTTP. Este ticket "
+        "fija los campos que la pantalla puede mostrar y la correspondencia entre la acción del "
+        "motor y el estado visible: remitida, incompleta o derivada. El resto de los tickets de "
+        "US-01 consume este modelo y no interpreta códigos de negocio por su cuenta.",
+        [
+            "El modelo de vista incluye resumen, intención, confianza, datos encontrados, datos faltantes, acción, motivo y, solo si la acción es SOLICITAR_INFORMACION, la lista de preguntas.",
+            "REMITIR_PROCESO se proyecta como estado visible Remitida y estado de respuesta REMITIDA.",
+            "SOLICITAR_INFORMACION se proyecta como estado visible Incompleta y estado de respuesta INCOMPLETA.",
+            "DERIVAR_OPERADOR se proyecta como estado visible Derivada y estado de respuesta DERIVADA.",
+            "Una respuesta con acción distinta de SOLICITAR_INFORMACION llega a la vista sin preguntas.",
+            "Una respuesta sin datos faltantes llega a la vista con esa colección vacía.",
+        ],
+        "Alta",
+        3,
+        [
+            "Declarar el tipo de la respuesta de POST /api/solicitudes con estado, intencion.tipo, confianza, datos encontrados, datos faltantes, resumen, accion, motivo y preguntas opcional.",
+            "Declarar el modelo de vista con las tres etiquetas visibles: Remitida, Incompleta y Derivada.",
+            "Implementar la función de proyección de acción y estado hacia esa etiqueta.",
+            "Cubrir la proyección con pruebas unitarias de las tres acciones y del caso sin datos faltantes.",
+        ],
+        "US-02 es la fuente del cuerpo. Si el endpoint aún no existe, este ticket igual puede "
+        "cerrarse contra un fixture con la forma acordada. La pantalla no conoce a los agentes "
+        "ni abre la base.",
+        workshop=True,
+    )
+    ticket(
+        doc,
+        "US01-02",
+        "Pantalla de captura en texto libre",
+        "El cliente entra a la pantalla de solicitud y redacta el caso con sus palabras. La "
+        "captura se limita a un campo y un botón. No hay selector de trámite ni campos previos "
+        "de caso, monto o fecha. Un envío vacío no sale del canal.",
+        [
+            "Al abrir la pantalla se ve un único campo de texto libre y un botón de envío.",
+            "No hay menú de trámites ni campos de número de caso, monto o fecha antes del envío.",
+            "Con el campo vacío, o con solo espacios, el envío no dispara la solicitud y el campo sigue editable.",
+            "Con texto escrito, el botón queda habilitado para enviar.",
+        ],
+        "Alta",
+        4,
+        [
+            "Crear la vista React de la solicitud y su estado local del texto.",
+            "Renderizar un área de texto y un botón, sin controles de formulario de trámite.",
+            "Validar en cliente que el texto, ya recortado, no esté vacío antes de continuar el flujo.",
+            "Añadir una prueba de componente para el estado inicial y para el bloqueo del envío vacío.",
+        ],
+        "El inicio de sesión queda fuera. La ruta puede asumir que el cliente ya está frente a "
+        "esta pantalla. El envío real y la espera se implementan en US01-03.",
+    )
+    ticket(
+        doc,
+        "US01-03",
+        "Envío del mensaje y espera en la misma pantalla",
+        "Al confirmar el texto, la interfaz llama a POST /api/solicitudes y el cliente permanece "
+        "en la misma pantalla hasta recibir la decisión. Durante esa espera no puede lanzar otra "
+        "solicitud. Al terminar, el resultado queda listo para el panel de US01-04.",
+        [
+            "Un texto válido se envía en el cuerpo de POST /api/solicitudes como el mensaje redactado.",
+            "La pantalla no navega a otra ruta mientras espera.",
+            "Con el envío en curso, el botón no admite otro envío.",
+            "Si la llamada falla, la pantalla informa el error, conserva el texto y vuelve a habilitar el envío.",
+            "Si la llamada responde, el texto enviado y la decisión proyectada quedan disponibles para mostrarse en la misma vista.",
+        ],
+        "Alta",
+        5,
+        [
+            "Implementar el cliente HTTP del canal, único punto de salida hacia la API.",
+            "Modelar los estados de interfaz: edición, enviando, respondida y error.",
+            "Deshabilitar el control de envío mientras el estado sea enviando.",
+            "Normalizar la respuesta con la proyección de US01-01 antes de entregarla a la vista.",
+            "Probar el bloqueo del doble envío y la recuperación ante un error de red con el cliente simulado.",
+        ],
+        "La interfaz solo habla con la API. Un adaptador o mock de US-02 basta para cerrar este "
+        "ticket. El código HTTP y la persistencia no se implementan aquí.",
+    )
+    ticket(
+        doc,
+        "US01-04",
+        "Panel de la decisión y sus tres estados",
+        "Cuando la API responde, la misma pantalla presenta la lectura del banco. El cliente ve "
+        "el resumen, la intención, la confianza, los datos encontrados, los datos faltantes, la "
+        "acción y el motivo. El estado visible es uno solo y el mensaje de cierre cambia según "
+        "la acción.",
+        [
+            "La decisión muestra resumen, intención, confianza, datos encontrados, datos faltantes, acción y motivo.",
+            "Si no hay datos faltantes, esa sección se muestra vacía.",
+            "Con REMITIR_PROCESO, el estado visible es Remitida, se comunica que la solicitud pasó al proceso que la resuelve y no aparecen preguntas.",
+            "Con SOLICITAR_INFORMACION, el estado visible es Incompleta y se listan las preguntas devueltas, sin pedir que el cliente repita el relato.",
+            "Con DERIVAR_OPERADOR, el estado visible es Derivada, se muestra el motivo y se informa que un operador continúa la atención.",
+            "Las tres respuestas no pueden mostrar más de un estado visible a la vez.",
+        ],
+        "Alta",
+        6,
+        [
+            "Crear el panel de decisión y componerlo en la pantalla de US01-02 después de una respuesta exitosa.",
+            "Renderizar las secciones comunes desde el modelo de vista de US01-01.",
+            "Implementar el bloque de Remitida sin lista de preguntas.",
+            "Implementar el bloque de Incompleta con la lista de preguntas concretas.",
+            "Implementar el bloque de Derivada con el aviso de continuidad por un operador.",
+            "Añadir pruebas de componente con un fixture por cada acción y uno con datos faltantes vacíos.",
+        ],
+        "Las etiquetas visibles son Remitida, Incompleta y Derivada. Los códigos REMITIR_PROCESO, "
+        "SOLICITAR_INFORMACION y DERIVAR_OPERADOR pueden acompañar la acción, siempre debajo de "
+        "ese lenguaje de negocio.",
+    )
+    ticket(
+        doc,
+        "US01-05",
+        "Verificación del caso de referencia en el canal",
+        "US-01 queda terminada cuando el cliente escribe cada mensaje de referencia, lo envía una "
+        "vez y lee en la misma pantalla el estado que le corresponde, con el resumen y el resto "
+        "de la decisión. Este ticket recorre ese criterio de punta a punta sobre el canal.",
+        [
+            "«Llevo varios días esperando la devolución de mi dinero.» termina en Incompleta y la pantalla pide número de caso, monto y fecha.",
+            "El relato con el caso 45821, $120.000 y la compra del 3 de noviembre termina en Remitida, con el resumen y sin preguntas.",
+            "El relato que además admite un cobro de tarjeta no reconocido termina en Derivada y avisa que un operador continúa la atención.",
+            "En los tres recorridos hay un solo envío y un solo estado visible.",
+            "El campo vacío sigue sin disparar la solicitud.",
+        ],
+        "Media",
+        4,
+        [
+            "Preparar tres fixtures de respuesta alineados con US-02, US-07, US-08 y US-09.",
+            "Automatizar el recorrido de cada mensaje: escribir, enviar una vez y afirmar el estado, el resumen y la presencia o ausencia de preguntas.",
+            "Automatizar el intento de envío con el campo vacío.",
+            "Dejar el guion manual de los tres mensajes para la demostración del MVP.",
+        ],
+        "Si el motor de US-03 a US-09 aún no está integrado, la verificación usa los fixtures. Al "
+        "conectar el POST real, el mismo guion sirve para la prueba de aceptación sin cambiar la "
+        "pantalla. La resolución del trámite y la conversación del operador quedan fuera del recorrido.",
+    )
+    para(
+        doc,
+        "Versión 1.1. Consolida el requerimiento del motor NLU y el backlog de la Actividad 3 "
+        "hasta el 12 de noviembre de 2026. El ticket de trabajo de este taller es US01-01.",
         size=10,
         italic=True,
         color=MUTED,
+        before=8,
     )
 
 
@@ -1205,6 +1745,9 @@ def main():
     section_secuencia(doc)
     section_arquitectura(doc)
     section_trazabilidad(doc)
+    section_historias(doc)
+    section_us01(doc)
+    section_tickets(doc)
     doc.save(OUT)
     print(OUT)
 
