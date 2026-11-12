@@ -68,3 +68,30 @@ El diagrama de casos de uso distingue al visitante del cliente logueado, y deja 
 | --- | --- |
 | [`casos_de_uso.puml`](taller_hito_1/actividad_2/casos_de_uso.puml) | Fuente PlantUML de los casos de uso |
 | [`casos_de_uso.png`](taller_hito_1/actividad_2/casos_de_uso.png) | Gráfica de esos casos de uso |
+
+## Actividad 3 — Trabajando como Tech Lead con GenAI
+
+En esta actividad el trabajo de las dos anteriores se consolida en una especificación de requerimientos del software (ERS), versión 1.0, del 12 de noviembre de 2026. El documento fija qué debe hacer el motor, qué recibe el cliente, cómo se recorre un caso, qué decisión sale de cada mensaje y con qué modelo, contratos y arquitectura se sostiene esa decisión. El ejercicio de Uber queda fuera de este sistema.
+
+El mismo texto está en Word y en PDF:
+
+| Archivo | Contenido |
+| --- | --- |
+| [`especificacion_requerimientos_motor_nlu.docx`](taller_hito_1/especificacion_requerimientos_motor_nlu.docx) | Especificación en Word |
+| [`especificacion_requerimientos_motor_nlu.pdf`](taller_hito_1/especificacion_requerimientos_motor_nlu.pdf) | La misma especificación en PDF |
+
+Cada capítulo sale de un artefacto ya construido:
+
+1. Propósito y alcance del identificador: termina cuando el mensaje ya tiene una decisión.
+2. Actores y fronteras: visitante, cliente logueado, proceso de negocio y operador.
+3. Funcionalidades, beneficios y recorrido del cliente (Actividad 2, prompts 1 a 3).
+4. Casos de uso y las tres salidas: remitir, pedir aclaración o derivar (Actividad 2 y `casos_de_uso`).
+5. Requisitos funcionales y reglas de negocio.
+6. Contratos de la respuesta HTTP y la equivalencia de nombres.
+7. Modelo de datos: `Request`, `Interpretation` y `Decision` (Actividad 2, prompt 6).
+8. Interacción de identidades (Actividad 1, proyecto NLU).
+9. Secuencia de la identificación (Actividad 1, proyecto NLU).
+10. Arquitectura de despliegue: la vista tentativa en AWS y la de microservicios, cada uno con su base.
+11. Correspondencia de cada capítulo con el artefacto del taller del que proviene.
+
+Un mismo ejemplo recorre toda la especificación: «Llevo varios días esperando la devolución de mi dinero». Con solo ese texto el motor pide número de caso, monto y fecha. Si el relato trae esos datos, el caso se remite. Si además admite un cobro de tarjeta no reconocido, pasa a un operador.
