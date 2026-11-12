@@ -1,0 +1,33 @@
+%%{init: {"theme": "neutral", "themeVariables": {"background": "#ffffff"}}}%%
+erDiagram
+    Request ||--o{ Interpretation : "acumula"
+    Interpretation ||--|| Decision : "produce"
+
+    Request {
+        string id PK
+        string status
+        string correlationId
+        datetime createdAt
+    }
+
+    Interpretation {
+        string id PK
+        string requestId FK
+        string intentType
+        float confidence
+        string entities
+        string identifiers
+        string missingFields
+        string summary
+        string ambiguities
+        boolean sufficient
+    }
+
+    Decision {
+        string id PK
+        string interpretationId FK
+        string action
+        boolean meetsRequirements
+        string reason
+        string questions
+    }

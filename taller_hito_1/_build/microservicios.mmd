@@ -1,0 +1,44 @@
+%%{init: {"theme": "base", "themeVariables": {"background": "#ffffff", "primaryColor": "#F8FAFC", "primaryBorderColor": "#334155", "primaryTextColor": "#0F172A", "lineColor": "#334155", "clusterBkg": "#F8FAFC", "clusterBorder": "#64748B", "fontSize": "16px"}}}%%
+flowchart TB
+    Cliente["Cliente"] --> R53["Amazon Route 53"]
+    R53 --> CF["Amazon CloudFront"]
+    CF --> S3["Amazon S3 — React"]
+    CF -->|"/api/solicitudes"| WAF["AWS WAF"]
+    WAF --> APIGW["Amazon API Gateway"]
+    APIGW -.->|"autoriza"| COG["Amazon Cognito"]
+    APIGW --> ALB["Application Load Balancer"]
+
+    subgraph VPC["Amazon VPC — ECS Fargate"]
+        ALB --> API["Requests API"]
+        API --> DB_REQ[("Aurora PostgreSQL — Request")]
+        API --> COORD["Coordinator"]
+        COORD --> DB_READ[("DynamoDB — Interpretation")]
+        COORD --> INTERP["Interpreter"]
+        COORD --> EXTR["Extractor"]
+        COORD --> CTX["Context analysis"]
+        COORD --> VAL["Validator"]
+        INTERP --> DB_INT[("DynamoDB — Intents")]
+        EXTR --> DB_EXT[("DynamoDB — Extractions")]
+        CTX --> DB_CTX[("DynamoDB — Context")]
+        VAL --> DB_DEC[("DynamoDB — Decision")]
+        INTERP --> BED["Amazon Bedrock"]
+        EXTR --> BED
+        CTX --> BED
+        COORD -->|"FORWARD_TO_PROCESS"| EB["Amazon EventBridge"]
+        COORD -->|"ESCALATE_TO_OPERATOR"| SQS["Amazon SQS"]
+    end
+
+    EB --> PROC["Siguiente proceso de negocio"]
+    SQS --> OP["Operador humano"]
+
+    classDef canal fill:#dbeafe,stroke:#2563eb,color:#172554
+    classDef borde fill:#ede9fe,stroke:#7c3aed,color:#4c1d95
+    classDef servicio fill:#dcfce7,stroke:#16a34a,color:#14532d
+    classDef datos fill:#fef3c7,stroke:#d97706,color:#78350f
+    classDef salida fill:#ffedd5,stroke:#ea580c,color:#7c2d12
+
+    class Cliente,S3 canal
+    class R53,CF,WAF,APIGW,COG,ALB,BED borde
+    class API,COORD,INTERP,EXTR,CTX,VAL servicio
+    class DB_REQ,DB_READ,DB_INT,DB_EXT,DB_CTX,DB_DEC datos
+    class EB,SQS,PROC,OP salida

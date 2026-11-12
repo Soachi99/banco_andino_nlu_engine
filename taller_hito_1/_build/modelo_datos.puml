@@ -1,0 +1,47 @@
+@startuml modelo_datos
+skinparam shadowing false
+skinparam roundcorner 8
+skinparam linetype ortho
+skinparam dpi 140
+skinparam ArrowColor #334155
+skinparam ClassBackgroundColor #F8FAFC
+skinparam ClassBorderColor #334155
+skinparam ClassFontColor #0F172A
+left to right direction
+
+entity "Request" as Request {
+  * id : string <<PK>>
+  --
+  status : string
+  correlationId : string
+  createdAt : datetime
+}
+
+entity "Interpretation" as Interpretation {
+  * id : string <<PK>>
+  --
+  requestId : string <<FK>>
+  intentType : string
+  confidence : float
+  entities : string
+  identifiers : string
+  missingFields : string
+  summary : string
+  ambiguities : string
+  sufficient : boolean
+}
+
+entity "Decision" as Decision {
+  * id : string <<PK>>
+  --
+  interpretationId : string <<FK>>
+  action : string
+  meetsRequirements : boolean
+  reason : string
+  questions : string
+}
+
+Request "1" ||--o{ "0..*" Interpretation : acumula
+Interpretation "1" ||--|| "1" Decision : produce
+
+@enduml
