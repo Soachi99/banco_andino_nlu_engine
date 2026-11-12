@@ -113,3 +113,19 @@ El trabajo quedó en tres documentos encadenados:
 [`UserHistories.md`](taller_hito_1/actividad_3/UserHistories.md) fija el alcance. [`US-01_Description.md`](taller_hito_1/actividad_3/US-01_Description.md) abre la primera historia, que es la cara del canal. [`US-01_Work_items.md`](taller_hito_1/actividad_3/US-01_Work_items.md) la parte en trabajo de implementación. La pantalla React solo habla con la API; el motor, la persistencia y la autenticación quedan en las historias siguientes.
 
 **En este taller se trabaja el primer ticket de esa primera historia: [US01-01. Modelo de presentación de la decisión](taller_hito_1/actividad_3/US-01_Work_items.md).** Define cómo la pantalla traduce la respuesta del motor al lenguaje del cliente: Remitida, Incompleta o Derivada, con resumen, intención, confianza, datos encontrados, datos faltantes, acción y motivo. Los demás tickets de US-01 consumen ese modelo.
+
+## Actividad 4: Integración con el Taller 1
+
+US01-01 ya está en el canal. La pantalla React proyecta la respuesta del motor a un solo estado visible y lo muestra con el lenguaje del cliente: resumen, intención, confianza, datos encontrados, datos faltantes, acción y motivo. Todavía no hay `POST /api/solicitudes`; la previsualización usa los fixtures de la devolución. Cada captura es un estado, y solo uno.
+
+**Remitida.** `REMITIR_PROCESO` queda como Remitida. El caso 45821 trae monto y fecha, la confianza es 92 % y no falta ningún dato. La solicitud pasa al proceso que la resuelve. No hay preguntas.
+
+![Estado Remitida de US01-01](taller_hito_1/actividad_4/us01-01-remitida.png)
+
+**Incompleta.** `SOLICITAR_INFORMACION` queda como Incompleta. La intención se sostiene (88 %) y faltan número de caso, monto y fecha. La pantalla lista esas tres preguntas, sin pedir que el cliente repita el relato.
+
+![Estado Incompleta de US01-01](taller_hito_1/actividad_4/us01-01-incompleta.png)
+
+**Derivada.** `DERIVAR_OPERADOR` queda como Derivada. El mensaje admite dos lecturas, la confianza baja a 41 % y un operador continúa la atención. El motivo queda visible y no aparecen preguntas.
+
+![Estado Derivada de US01-01](taller_hito_1/actividad_4/us01-01-derivada.png)
