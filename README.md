@@ -95,3 +95,19 @@ Cada capítulo sale de un artefacto ya construido:
 11. Correspondencia de cada capítulo con el artefacto del taller del que proviene.
 
 Un mismo ejemplo recorre toda la especificación: «Llevo varios días esperando la devolución de mi dinero». Con solo ese texto el motor pide número de caso, monto y fecha. Si el relato trae esos datos, el caso se remite. Si además admite un cobro de tarjeta no reconocido, pasa a un operador.
+
+### Backlog del MVP
+
+A partir de esa especificación se armó el backlog del identificador. El corte del MVP es un mensaje en texto libre que, en un solo `POST /api/solicitudes`, devuelve una decisión persistida y visible: intención, confianza, datos encontrados, datos faltantes, resumen, una sola acción y su motivo. La acción es remitir el caso, pedir una aclaración o derivar a un operador.
+
+El trabajo quedó en tres documentos encadenados:
+
+| Documento | Qué contiene |
+| --- | --- |
+| [`UserHistories.md`](taller_hito_1/actividad_3/UserHistories.md) | Las once historias del MVP, de la pantalla al recorrido del coordinador. |
+| [`US-01_Description.md`](taller_hito_1/actividad_3/US-01_Description.md) | La primera historia, descrita como Product Owner: el cliente escribe en texto libre y ve la decisión en la misma pantalla. |
+| [`US-01_Work_items.md`](taller_hito_1/actividad_3/US-01_Work_items.md) | Los tickets de esa historia: modelo de presentación, captura, envío, panel de los tres estados y verificación del caso de referencia. |
+
+[`UserHistories.md`](taller_hito_1/actividad_3/UserHistories.md) fija el alcance. [`US-01_Description.md`](taller_hito_1/actividad_3/US-01_Description.md) abre la primera historia, que es la cara del canal. [`US-01_Work_items.md`](taller_hito_1/actividad_3/US-01_Work_items.md) la parte en trabajo de implementación. La pantalla React solo habla con la API; el motor, la persistencia y la autenticación quedan en las historias siguientes.
+
+**En este taller se trabaja el primer ticket de esa primera historia: [US01-01. Modelo de presentación de la decisión](taller_hito_1/actividad_3/US-01_Work_items.md).** Define cómo la pantalla traduce la respuesta del motor al lenguaje del cliente: Remitida, Incompleta o Derivada, con resumen, intención, confianza, datos encontrados, datos faltantes, acción y motivo. Los demás tickets de US-01 consumen ese modelo.
