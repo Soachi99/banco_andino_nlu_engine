@@ -1,0 +1,114 @@
+' Casos de uso — Identificador de solicitudes (MVP)
+' El sistema termina cuando el mensaje tiene una sola decisión.
+'
+' Cliente es abstracto: no se instancia.
+' Usuario visitante y Usuario logueado lo especializan y heredan
+' «Enviar el mensaje y obtener una decisión».
+' Solo el usuario logueado se asocia además a «Remitir el caso».
+'
+' <<include>>  comportamiento siempre presente en el caso base.
+' <<extend>>   exactamente una extensión, según la condición del cuadro.
+' Proceso de negocio y Operador reciben la decisión; no actúan después
+' dentro de este sistema.
+
+@startuml casos_de_uso
+!pragma layout smetana
+
+title Casos de uso del identificador de solicitudes\n<size:13>Del mensaje escrito a una sola decisión</size>
+
+skinparam shadowing false
+skinparam roundcorner 10
+skinparam linetype ortho
+skinparam nodesep 18
+skinparam ranksep 22
+skinparam dpi 140
+skinparam ArrowColor #334155
+skinparam ArrowFontColor #1E293B
+skinparam ArrowFontSize 12
+
+skinparam actor {
+  BorderColor #334155
+  FontColor #0F172A
+  FontSize 13
+}
+skinparam usecase {
+  BackgroundColor #F8FAFC
+  BorderColor #334155
+  FontColor #0F172A
+  FontSize 13
+}
+skinparam rectangle {
+  BackgroundColor #FFFFFF
+  BorderColor #64748B
+  FontColor #0F172A
+  FontStyle bold
+  FontSize 14
+}
+skinparam legend {
+  BackgroundColor #F8FAFC
+  BorderColor #64748B
+  FontColor #0F172A
+  FontSize 12
+}
+
+left to right direction
+
+actor "Usuario\nvisitante" as visitante #F1F5F9
+actor "Cliente" as cliente <<abstract>>
+actor "Usuario\nlogueado" as logueado #E0F2FE
+
+visitante --|> cliente
+logueado --|> cliente
+
+rectangle "Identificador de solicitudes" {
+  usecase "Enviar el mensaje\ny obtener una decisión" as UC1
+
+  together {
+    usecase "Clasificar\nla intención" as UC2
+    usecase "Extraer datos\nencontrados y faltantes" as UC3
+    usecase "Estimar\nla confianza" as UC4
+    usecase "Resumir\nla solicitud" as UC5
+    usecase "Elegir\nuna sola acción" as UC6
+  }
+
+  together {
+    usecase "Remitir\nel caso" as UC7
+    usecase "Pedir\nuna aclaración" as UC8
+    usecase "Derivar\na un operador" as UC9
+  }
+
+  UC1 ..> UC2 : <<include>>
+  UC1 ..> UC3 : <<include>>
+  UC1 ..> UC4 : <<include>>
+  UC1 ..> UC5 : <<include>>
+  UC1 ..> UC6 : <<include>>
+
+  UC7 ..> UC6 : <<extend>>
+  UC8 ..> UC6 : <<extend>>
+  UC9 ..> UC6 : <<extend>>
+}
+
+cliente --> UC1
+logueado --> UC7
+
+actor "Proceso\nde negocio" as proceso <<secundario>>
+actor "Operador" as operador <<secundario>>
+proceso -- UC7
+operador -- UC9
+
+legend bottom
+  |= Elemento |= Definición |
+  | Cliente | Actor abstracto. El visitante y el logueado heredan su asociación. |
+  | Usuario visitante | El mensaje llega sin identidad de cliente. |
+  | Usuario logueado | La sesión ya aporta la identidad. Iniciar sesión queda fuera del sistema. |
+  | <<include>> | Clasificar, extraer, estimar la confianza, resumir y elegir acción ocurren siempre. |
+  | <<extend>> | Se ejecuta exactamente una: remitir, pedir aclaración o derivar. |
+  | Remitir el caso | Solo usuario logueado, con una intención, confianza suficiente y datos mínimos (caso, monto y fecha). |
+  | Pedir una aclaración | Una intención, confianza suficiente y un dato que el cliente puede aportar. En el visitante, la identidad cuenta como dato faltante. |
+  | Derivar a un operador | Más de una lectura, o confianza baja. Vale para los dos actores. |
+  | Actores secundarios | Proceso de negocio y Operador reciben la decisión. Su trabajo posterior queda fuera. |
+  | Poscondición | Una respuesta: intención, confianza, datos encontrados, datos faltantes, resumen, acción y motivo. |
+  | Ejemplo | «Llevo varios días esperando la devolución de mi dinero». Solo ese texto: pedir aclaración. Logueado, con caso 45821, $120.000 y 3 de noviembre: remitir. El mismo relato más un cobro no reconocido: derivar. |
+endlegend
+
+@enduml
